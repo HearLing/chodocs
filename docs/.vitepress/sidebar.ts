@@ -85,5 +85,13 @@ export default {
         { text: "聊聊近况，差点账号被永久封禁...", link: "/essay/ch1" },
       ],
     },
-  ]
+  ],
+  '/interview/':[{
+    text: "React",
+    collapsible: true,
+    collapsed: false,
+    items: [
+      { text: "模拟面试", link: "/interview/React/react-summary" },
+    ],
+  },]
 };
