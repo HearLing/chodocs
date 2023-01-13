@@ -83,6 +83,7 @@ export default {
     {
       items: [
         { text: "聊聊近况，差点账号被永久封禁...", link: "/essay/ch1" },
+        {text:'2022年总结-内耗和放弃内耗的一年', link: "/essay/hl1"}
       ],
     },
   ],

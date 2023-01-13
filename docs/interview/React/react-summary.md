@@ -132,19 +132,29 @@ React16 开始的fiber架构可以分为三层，相较于React15，新增了Sch
 - Renderer（渲染器）—— 负责将变化的组件渲染到页面上
 
 官方也推荐了 [答案 1](https://github.com/acdlite/react-fiber-architecture) 和 [答案 2](https://medium.com/react-in-depth/inside-fiber-in-depth-overview-of-the-new-reconciliation-algorithm-in-react-e1c04700ef6e)
-，我这里基于此题，简单描述一下，什么是 Fiber reconciler，以及解决了什么问题，怎么解决的（进阶）。
+，我这里基于此题，简单描述一下，什么是 Fiber ，以及解决了什么问题，怎么解决的（进阶）。
 
-是什么？
+**是什么？**
 
-- reconciliation：
+Fiber 是 React 16 中采用的新协调（reconciliation）引擎，主要目标是支持虚拟 DOM 的渐进式渲染。
 
-解决了什么问题？
+**解决了什么问题？**
 
-怎么解决的
+Fiber 将原有的 Stack Reconciler 替换为 Fiber Reconciler，提高了复杂应用的可响应性和性能。
+
+**怎么解决的**
+
+- 对大型复杂任务的分片。
+- 对任务划分优先级，优先调度高优先级的任务。
+- 调度过程中，可以对任务进行挂起、恢复、终止等操作。
+
+::: warning TODO
+简述可能错在错误理解，后续会更新详细文章解答。
+:::
 
 </details>
 
-## 虚拟 DOM 的工作原理
+## 7、虚拟 DOM 的工作原理
 
 <details><summary><b>参考答案</b></summary>
 这个问题可能就会让你摸不着头脑，要讲清一个技术的原理，我们只要从三大方面着手就行，是什么、为什么、怎么做。这个问题可能不会问的这么泛，可能会问更细一点，比如：什么是虚拟DOM，他有什么优缺点，如何实现虚拟DOM。
@@ -173,7 +183,7 @@ React16 开始的fiber架构可以分为三层，相较于React15，新增了Sch
 
 那你再说说 React 的 Diff 算法是怎么实现的吧
 
-## 7、React 的 diff 算法
+## 8、React 的 diff 算法
 
 <details><summary><b>参考答案</b></summary>
 
@@ -203,14 +213,18 @@ React 对 diff 算法的优化，毕竟要完全对比两棵树的复杂度是�
 
 ## ------ 技术栈分界线 ------
 
-以上都是多少都可以问一问的题，下面的就涉及技术栈了。你可以理解为根据公司技术栈出题，但不排除有的公司招聘上没写这个技术栈也考你哈。
+以上都是多少都可以问一问的题，下面的就涉及技术栈了。你可以理解为根据公司技术栈出题。也可以理解为和 React 强相关的技术栈出题。
+
+::: tip
+篇幅原因，只是挑选了一些面试中和 React 相关性比较强，且比较常见的问题。
+:::
 
 ## class
 
 下面两道问题一般是公司存在 class 语法代码可能会问的题。
 打个比方：公司项目旧代码是用 class 写的，希望你来了能维护或者重构就会问一些 class 的知识。
 
-## 8、class 与 hooks 的区别/优劣
+## 9、class 与 hooks 的区别/优劣
 
 <details><summary><b>参考答案</b></summary>
 
@@ -222,17 +236,33 @@ React 对 diff 算法的优化，毕竟要完全对比两棵树的复杂度是�
 
 </details>
 
-## 9、聊聊 class 与 hook 的生命周期
+## 10、聊聊 class 与 hook 的生命周期
 
 <details><summary><b>参考答案</b></summary>
 分为三个阶段 挂载->更新-> 卸载 （Error）
 
-详细请看表格，其中标注 UNSAFE\_ 的都是被弃用的：
+详细请看表格，其中标注 UNSAFE\_ 的都是被弃用的，通过这个表格可知道各方法所处的时期：
 
 |             | Mount                                                                  | Update                                                                                                                | Unmount              | Error                    |
 | ----------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------ |
 | Render 阶段 | construct、getDerivedStateFromProps、UNSAFE_componentWillMount、Render | UNSAFE_componentWillReceiveProps、getDerivedStateFromProps、shouldComponentUpdate、UNSAFE_componentWillUpdate、Render |                      | getDerivedStateFromError |
 | commit 阶段 | componentDidMount、getSnapshotBeforeUpdate                             | componentDidUpdate                                                                                                    | componentWillUnmount | componentDidCatch        |
+
+- 对于异步请求，应该放在 componentDidMount 中去操作。
+  > constructor：可以放，但从设计上而言不推荐。constructor 主要用于初始化 state 与函数绑定，不承载业务逻辑且现在已经很少使用了。componentWillMount：已被标记废弃，在新的异步渲染架构下会触发多次渲染，容易引发 Bug。
+- getDerivedStateFromProps 容易编写反模式代码，使受控组件与非受控组件区分模糊。
+
+- UNSAFE_componentWillMount 被标记弃用，主要原因是新的异步渲染架构会导致它被多次调用。所以网络请求及事件绑定代码应移至 componentDidMount 中。
+
+- UNSAFE_componentWillReceiveProps 被标记弃用，被 getDerivedStateFromProps 所取代，主要原因是性能问题。
+
+- shouldComponentUpdate 通过返回 true 或者 false 来确定是否需要触发新的渲染。主要用于性能优化。
+
+- UNSAFE_componentWillUpdate 同样是由于新的异步渲染机制，而被标记废弃，原先的逻辑可结合 getSnapshotBeforeUpdate 与 componentDidUpdate 改造使用。
+
+- 如果在 componentWillUnmount 函数中忘记解除事件绑定，取消定时器等清理操作，容易引发 bug。
+
+- 如果没有添加错误边界处理，当渲染发生异常时，用户将会看到一个无法操作的白屏，所以一定要添加。
 
 </details>
 
@@ -242,7 +272,7 @@ React 对 diff 算法的优化，毕竟要完全对比两棵树的复杂度是�
 
 情景导入：如果简历没写我可能会问，之前有写过 Vue 项目嘛？（有写过啊，就直接问，没写过就跳过这个技术栈）简历有写的话我就会说，我看你的 xxx 项目是用 Vue 写的，那。。。
 
-## 10、你觉得 React 与 Vue 的区别主要在哪呢？
+## 11、你觉得 React 与 Vue 的区别主要在哪呢？
 
 <details><summary><b>参考答案</b></summary>
 
@@ -292,7 +322,7 @@ React 对 diff 算法的优化，毕竟要完全对比两棵树的复杂度是�
 
 </details>
 
-## 11、vuex 与 redux 的区别
+## 12、vuex 与 redux 的区别
 
 <details><summary><b>参考答案</b></summary>
 
@@ -314,32 +344,264 @@ React 对 diff 算法的优化，毕竟要完全对比两棵树的复杂度是�
 
 </details>
 
-## Redux
+## 状态/路由
 
-## 12、简述 redux 状态管理
+## 13、flux 状态管理
 
-## 路由
+<details><summary><b>参考答案</b></summary>
 
-## 13、React-Router 的实现原理是什么？
+Flux 是一种基于单向数据流的架构。架构如图所示：
 
-## 14、React-Router 如何获取 URL 的参数和历史对象？
+![flux.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/4876bf2f94ee4bc2a9a68a0e75e360bf~tplv-k3u1fbpfcp-watermark.image?)
 
-## typescript
+具体流程：Store 存储了视图层所有的数据，当 Store 变化后会引起 View 层的更新。如果在视图层触发 Action，比如点击一个按钮，当前的页面数据值会发生变化。Action 会被 Dispatcher 进行统一的收发处理，传递给 Store 层。由于 Store 层已经注册过相关 Action 的处理逻辑，处理对应的内部状态变化后，会触发 View 层更新。
 
-## ------ 设计模式/优化 ------
+</details>
 
-React 是对设计模式的能力很有要求的，这里只列举和 React 强相关的设计模式
+## 14、简述 redux 状态管理
 
-## 15、HOC
+<details><summary><b>参考答案</b></summary>
 
-## 16、Render Props
+**核心设计**
 
-## 17、Container/Presentational
+包含了三大原则：单一数据源、纯函数 Reducer、State 是只读的。
 
-## 18、react 的优化
+一个核心点是处理“副作用”。
+
+- 第一类是在 Dispatch 的时候会有一个 middleware 中间件层，拦截分发的 Action 并添加额外的复杂行为，还可以添加副作用。
+- 第二类是允许 Reducer 层中直接处理副作用，采取该方案的有 React Loop，React Loop 在实现中采用了 Elm 中分形的思想，使代码具备更强的组合能力。
+
+> AJAX 请求等异步工作，或不是纯函数产生的第三方的交互都被认为是 “副作用”
+
+**数据流**
+
+Redux  中整个数据流的方案与 Flux 大同小异。
+
+首先是 dispatch 一个 action。然后 reducer 会收到这个 action, 根据这个 action 对状态进行修改。状态修改以后会被处理容器捕捉到。从而对相关的界面进行更新。
+
+![redux.png](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2018/6/24/1642fe4239346286~tplv-t2oaga2asx-zoom-in-crop-mark:4536:0:0:0.image)
+
+<font color=gray>另外一些需要知道的</font>
+
+- Store，Store 存放应用程序的状态，并且有帮助函数来访问这些状态。Store 可以用来聆听变化和发送 action。Store 只有一个。
+- Reducers，数据的状态是通过 reducer 函数来改变的。
+- Actions，Actions 代表的是一个对象。有两部分，一个是 action 本身，另一个就是它的 payload。简单说就是对哪些数据进行哪些操作。
+- React-Redux，Redux 本身和 React 没有关系，只是数据处理中心，是 React-Redux 让他们联系在一起。React-rRedux 提供两个方法：connect 和 Provider。
+
+</details>
+
+## 15、mobx 和 redux 有什么区别？
+
+<details><summary><b>参考答案</b></summary>
+
+- 核心的差异：Redux 是单向数据流，Mobx 则是通过监听数据的属性变化，直接在数据上更改来触发 UI 的渲染。
+- redux 是只读的，不能直接去修改它，而是应该返回一个新的状态，同时使用纯函数。mobx 中的状态是可变的，可以直接对其进行修改。
+- mobx 结果也难以预测，调试会比较困难。redux 提供能够进行时间回溯的开发工具，同时其纯函数以及更少的抽象，让调试变得更加的容易
+
+</details>
+
+## 16、React-Router 的实现原理是什么？
+
+<details><summary><b>参考答案</b></summary>
+
+基于 history 库来实现不同的客户端路由实现思想，并且能够保存历史记录等，磨平浏览器差异，上层无感知。
+
+> 不同的客户端路由实现思想:1、基于 hash 的路由：通过监听 hashchange 事件，感知 > hash 的变化。通过 location.hash=xxx 改变 hash 。2、基于 H5 history 路由：通过自定义事件触发实现监听 url 的变化。可以通过 history.pushState 和 resplaceState 等改变 url ，会将 URL 压入堆栈，同时能够应用 history.go() 等 API。
+
+通过维护的列表，在每次 URL 发生变化的回收，通过配置的 路由路径，匹配到对应的 Component，并且 render。
+
+</details>
+
+## 17、React-Router 实现路由切换
+
+<details><summary><b>参考答案</b></summary>
+有几种方式：
+
+- 使用 `<Route>` ，会比较 `<Route>` 的 path 属性和当前地址的 pathname 实现路由切换。
+
+- 使用 `<Switch>` 会遍历其所有的子 `<Route>` 元素，并仅渲染与当前地址匹配的第一个元素。
+
+- 使用`<Link>`、 `<NavLink>`、`<Redirect>`，会在你的应用程序中创建链接，通过 to 属性与当前地址匹配。
+
+</details>
+
+## 18、React-Router 如何获取 URL 的参数和历史对象？
+
+<details><summary><b>参考答案</b></summary>
+
+- get 传值：通过 location.search 获取 url 获取到一个字符串'?id='1111'，通过浏览器的 URLSearchParams api 或自封装字符串解析方法解析出 id 的值。
+- 动态路由传值：通过 match.params.id 或者 useParams（Hooks）取得 url 中的动态路由 id 部分的值
+- 通过 query 或 state 传值：to 属性传递对象或数组时，通过 location.state 或 location.query 来获取即可，但是存在缺点就是，只要刷新页面参数就会丢失。
+</details>
+
+## ------ 设计模式/代码优化 ------
+
+React 是对设计模式的能力很有要求的，这里只列举和 React 强相关的设计模式。
+
+::: warning TODO
+更详细的设计模式文章，待更新至设计模式专栏
+:::
+
+## 19、HOC
+
+<details><summary><b>参考答案</b></summary>
+
+> 高阶组件（HOC）是 React 中用于复用组件逻辑的一种高级技巧。HOC 自身不是 React API 的一部分，它是一种基于 React 的组合特性而形成的设计模式。
+
+在我们的应用程序中，我们经常希望在多个组件中使用相同的逻辑。此逻辑可以包括将特定样式应用于组件、要求授权或添加全局状态。
+
+能够在多个组件中重用相同逻辑的一种方法就是使用高阶组件模式。这种模式允许我们在整个应用程序中重用组件逻辑。
+
+具体而言，高阶组件是参数为组件，返回值为新组件的函数。HOC 包含我们想要应用于作为参数传递的组件的某些逻辑。应用该逻辑后，HOC 返回带有附加逻辑的元素。
+
+```js
+// HOC模式例子
+function withStyles(Component) {
+  return props => {
+    const style = { padding: '0.2rem', margin: '1rem' }
+    return <Component style={style} {...props} />
+  }
+}
+
+const Button = () = <button>Click me!</button>
+const Text = () => <p>Hello World!</p>
+
+const StyledButton = withStyles(Button)
+const StyledText = withStyles(Text)
+```
+
+</details>
+
+## 20、Render Props
+
+<details><summary><b>参考答案</b></summary>
+
+> 术语 “render prop” 是指一种在 React 组件之间使用一个值为函数的 prop 共享代码的简单技术
+
+具有 render prop 的组件接受一个返回 React 元素的函数，并在组件内部通过调用此函数来实现自己的渲染逻辑。
+
+```js
+// Render Props模式例子
+<DataProvider render={(data) => <h1>Hello {data.target}</h1>} />
+```
+
+</details>
+
+## 21、非受控组件
+
+<details><summary><b>参考答案</b></summary>
+
+> 在大多数情况下，推荐使用 受控组件 来处理表单数据。在一个受控组件中，表单数据是由 React 组件来管理的。另一种替代方案是使用非受控组件，这时表单数据将交由 DOM 节点来处理。
+
+因为非受控组件将真实数据储存在 DOM 节点中，所以在使用非受控组件时，有时候反而更容易同时集成 React 和非 React 代码。如果你不介意代码美观性，并且希望快速编写代码，使用非受控组件往往可以减少你的代码量。否则，你应该使用受控组件。
+
+```js{9,18}
+// 非受控组件例子
+class NameForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.input = React.createRef();
+  }
+
+  handleSubmit(event) {
+    alert('A name was submitted: ' + this.input.current.value);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Name:
+          <input type="text" ref={this.input} />
+        </label>
+        <input type="submit" value="Submit" />
+      </form>
+    );
+  }
+}
+```
+
+</details>
+
+## ------ 性能优化 ------
+
+## 22、如何发现以及分析性能问题
+
+<details><summary><b>参考答案</b></summary>
+肉眼可见的性能问题，如白屏、卡顿、加载时间很长，一般是要答带数据的优化。
+
+1. lightHouse 的评分，可以作为优化依据。
+
+2. React 性能检测的一些工具也可以：Profiler 能测出 reRender 的耗时，平常对数据要求不严也就是不需要准确测出 rerender 的时间的话可以使用 ReactDevtool。
+
+3. 浏览器开发者工具可以检测到大部分的性能数据：
+
+- 网络面板的一些优化方案：
+
+  1. 阻塞或者排队，由于一个域名最多维护 6 个链接，可以做域名分片或者多个域名。
+  2. 网络原因可以用 CDN 缓存
+  3. 下载时间过长可以压缩或者 webpack 打包优化。
+
+- performance：
+  1. FPS （Frames Per Second）每秒传输帧数，发现页面帧速图表出现红色块，代表一帧所需时间过长->卡顿。
+  2. CPU 图表显示占得面积太大，可能某个 js 占用太多主线程时间
+  3. V8 内存使用凸显一直上升，内存泄漏可能存在
+
+</details>
+
+## 23、怎么做性能优化
+
+<details><summary><b>参考答案</b></summary>
+
+**1、写 React 代码的优化**
+
+减少计算
+
+1. 增加 key
+2. commit 阶段减少耗时操作
+3. 一些 hook ： useMemo、useCallback、React.Memo 4. setState 将多个合并，或者用 ustable_batchedUpdate 批量更新
+
+精细化渲染
+
+1. 优先用户响应，耗时任务放到下一个宏任务。“关闭弹窗类似的场景”
+2. usecontext 跳过中间组件 ，发布订阅模式，redux
+3. useMemo 也可以跳过 render
+
+控制范围
+
+1. 防抖节流
+2. 懒渲染（"虚拟列表"）、懒加载（webPack）
+3. 避免在 didMount 或 didUpdate 中更新 state
+
+**2、webpack 的优化（除去开发环境的优化）**
+
+打包速度
+
+1. onOf、external 可以跳过 loader 的查找，除去一些不打包
+2. babel 缓存，可以对运行结果缓存
+3. 多进程打包 thread-loader
+
+运行性能
+
+1.  文件资源缓存 hash、chunkhash、contenthash，这几个的区别也要明白
+2.  treeShacking
+3.  code split
+4.  懒加载、预加载（某些浏览器不支持）
+5.  离线可访问 pwa （也是一种优化，但用的不多）
+
+**3、网络等优化**
+
+1. CDN 缓存
+2. 域名分片
+3. 文件压缩
+4. DNS 预解析，提前解析之后可能会用到的域名
+
+</details>
 
 ## 最后的话
 
-🚀🚀 觉得不错的朋友可以 ⭐️ 关注我，后续会持续更新~
+⭐️虽然说现在大环境不好，工作难找但还是衷心希望各位准备面试的小伙伴面试顺利~，收割 offer，我们一起加油吧 🤝！还有就是新年快乐 ❤️ ~
 
-⭐️⭐️ 虽然说现在大环境不好，工作难找但还是衷心希望各位准备面试的小伙伴面试顺利~，收割 offer，我们一起加油吧 🤝！还有就是新年快乐 ❤️ ❤️ ~
+🚀 文章还有不足，如果你有意向，很欢迎你可以加入我们，文章后续会持续更新~
